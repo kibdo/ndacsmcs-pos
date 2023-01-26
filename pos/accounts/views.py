@@ -73,11 +73,11 @@ def save_user(request):
                 if 'isAdmin' in data.keys():
                     is_staff = True
                 else:
-                    is_staff = False
+                    is_staff = is_staff
                 if 'isSalesman' in data.keys():
                     is_salesman = True
                 else:
-                    is_salesman = False
+                    is_salesman = is_salesman
                 save_user = get_user_model().objects.filter(id=data['id']).update(
                     first_name=data['firstname'], last_name=data['lastname'], is_salesman=is_salesman, is_staff=is_staff)
                 if len(data['password']) > 0:
