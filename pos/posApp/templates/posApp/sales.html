@@ -2,9 +2,47 @@
 <div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-12">
     <div class="mdc-card py-2">
         <div class="d-flex justify-content-between align-items-center">
-            <h4 class="card-title mb-0">Sales List</h4>
+            <h4 class="card-title mb-0 ">Sales List</h4>
         </div>
     </div>
+</div>
+<div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-12">
+        <div class="mdc-card py-2 d-flex items-start ">
+            <span class="font-bold">Filter By Date</span>
+            <form action="" method="GET">
+                <table class="text-sm w-auto">
+                    <thead>
+                        <th class="pr-2 font-weight-light">
+                            From
+                        </th>
+                        <th class="px-2 font-weight-light">
+                            To
+                        </th>
+                        <th class="px-2 font-weight-light font-bold">
+                            
+                        </th>
+                    </thead>
+                    <tbody>
+                        
+                        <tr>
+                            <td class="pr-2 font-weight-light">
+                                <input type="date" name="date_added_after" id="" value="{{ date_range.start|date:'Y-m-d' }}"/>
+                            </td>
+                            <td class="px-2 font-weight-light">
+                                <input type="date" name="date_added_before" id="" value="{{ date_range.end|date:'Y-m-d' }}"/>
+                            </td>
+                            <td class="px-2 font-bold text-xl">
+                                <input class="transition-all duration-200 ease-in text-sm bg-blue-800 text-gray-100 px-3 py-1 rounded-1 hover:bg-blue-600" type="submit" value="filter" />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </form>            
+        </div>
+        <div class="mdc-card py-2 d-flex items-start font-bold">
+            Total Sales Within Time Period
+            <span class="text-4xl text-blue-800">{{ grand_total_sales }}</span>
+        </div>
 </div>
 <div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-12">
     <div class="mdc-card">
@@ -52,6 +90,18 @@
                     {% endfor %}
                 </tbody>
             </table>
+            <div class="paginator-container">
+                {% if sale_data.has_previous %}
+                    <a href="?page=1">&laquo; first</a>
+                    <a href="?page={{ sale_data.previous_page_number }}">previous</a>                    
+                {% endif %}
+                <span> Page {{ sale_data.number }} of {{ sale_data.paginator.num_pages }}. </span>
+                {% if sale_data.has_next %}
+                    <a href="?page={{ sale_data.next_page_number }}">Next</a>
+                    <a href="?page={{ sale_data.paginator.num_pages }}">last &raquo;</a>
+                {% endif %}
+                Navigation
+            </div>
         </div>
     </div>
 </div>

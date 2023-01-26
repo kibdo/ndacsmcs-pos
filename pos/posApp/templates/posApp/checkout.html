@@ -33,9 +33,13 @@
         })
         $('#checkout-form').submit(function(e) {
             e.preventDefault();
-            if ($('[name="amount_change"]').val() < 0) {
-                alert("Tendered Amount is lower that Payable Amount")
+            if ($('[name="amount_change"]').val() < 0){
+                alert("Tendered Amount is lower than Payable Amount")
                 return false;
+            };
+            if ($('[name="tendered_amount"]').val() <= 0){
+                alert("Tendered Amount can't be lower than product price")
+                return false
             }
             $('#pos-form').submit()
         })

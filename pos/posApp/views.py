@@ -2,7 +2,7 @@ from pickle import FALSE
 from django.shortcuts import redirect, render
 from django.http import HttpResponse
 from flask import jsonify
-from posApp.models import Category, Products, Sales, salesItems
+from .models import Category, Products, Sales, salesItems
 from django.db.models import Count, Sum
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
@@ -11,13 +11,24 @@ from django.shortcuts import redirect
 import json
 import sys
 from datetime import date, datetime
+from django.core.paginator import Paginator
+from .filters import SalesFilter
 
 # if admin user
 
 
-def if_admin(user):
+def is_admin(user):
     return user.is_staff
 
+
+def is_salesman(user):
+    return user.is_salesman
+
+
+def is_salesman_or_is_admin(user):
+    if user.is_salesman or user.is_staff:
+        return True
+    return False
 
 # Login
 
@@ -102,7 +113,7 @@ def category(request):
 
 
 @login_required
-@user_passes_test(if_admin, redirect_field_name='home-page')
+@user_passes_test(is_admin, redirect_field_name='home-page')
 def manage_category(request):
     category = {}
     if request.method == 'GET':
@@ -120,7 +131,7 @@ def manage_category(request):
 
 
 @login_required
-@user_passes_test(if_admin, redirect_field_name='home-page')
+@user_passes_test(is_admin, redirect_field_name='home-page')
 def save_category(request):
     data = request.POST
     resp = {'status': 'failed'}
@@ -140,7 +151,7 @@ def save_category(request):
 
 
 @login_required
-@user_passes_test(if_admin, redirect_field_name='home-page')
+@user_passes_test(is_admin, redirect_field_name='home-page')
 def delete_category(request):
     data = request.POST
     resp = {'status': ''}
@@ -166,7 +177,7 @@ def products(request):
 
 
 @login_required
-@user_passes_test(if_admin, redirect_field_name='home-page')
+@user_passes_test(is_admin, redirect_field_name='home-page')
 def manage_products(request):
     product = {}
     categories = Category.objects.filter(status=1).all()
@@ -194,7 +205,7 @@ def test(request):
 
 
 @login_required
-@user_passes_test(if_admin, redirect_field_name='home-page')
+@user_passes_test(is_admin, redirect_field_name='home-page')
 def save_product(request):
     data = request.POST
     resp = {'status': 'failed'}
@@ -225,7 +236,7 @@ def save_product(request):
 
 
 @login_required
-@user_passes_test(if_admin, redirect_field_name='home-page')
+@user_passes_test(is_admin, redirect_field_name='home-page')
 def delete_product(request):
     data = request.POST
     resp = {'status': ''}
@@ -239,6 +250,7 @@ def delete_product(request):
 
 
 @login_required
+@user_passes_test(is_salesman_or_is_admin, redirect_field_name='home-page')
 def pos(request):
     products = Products.objects.filter(status=1)
     product_json = []
@@ -255,6 +267,7 @@ def pos(request):
 
 
 @login_required
+@user_passes_test(is_salesman_or_is_admin, redirect_field_name='home-page')
 def checkout_modal(request):
     grand_total = 0
     if 'grand_total' in request.GET:
@@ -266,6 +279,7 @@ def checkout_modal(request):
 
 
 @login_required
+@user_passes_test(is_salesman_or_is_admin, redirect_field_name='home-page')
 def save_pos(request):
     resp = {'status': 'failed', 'msg': ''}
     data = request.POST
@@ -314,6 +328,11 @@ def save_pos(request):
 def salesList(request):
     sales = Sales.objects.all()
     sale_data = []
+    grand_total_sales = 0
+    date_range = {
+        'start': None,
+        'end': None
+    }
     for sale in sales:
         data = {}
         for field in sale._meta.get_fields(include_parents=False):
@@ -323,12 +342,29 @@ def salesList(request):
         data['item_count'] = len(data['items'])
         if 'tax_amount' in data:
             data['tax_amount'] = format(int(data['tax_amount']), '.2f')
-        # print(data)
-        sale_data.append(data)
-    # print(sale_data)
+    sale_data = SalesFilter(request.GET, queryset=sales)
+    for completed_sale in sale_data.qs:
+        print(completed_sale.date_added)
+        grand_total_sales += completed_sale.grand_total
+    try:
+
+        date_range['start'] = sale_data.qs[0].date_added
+        date_range['end'] = sale_data.qs[::-1][0].date_added
+
+    except:
+        pass
+    # Paginator
+    sale_data = Paginator(sale_data.qs, 3)
+    page_number = request.GET.get('page')
+    sale_data = sale_data.get_page(page_number)
+    # Filter
+    # print(sale_data[0].date_added)
+
     context = {
         'page_title': 'Sales Transactions',
         'sale_data': sale_data,
+        'grand_total_sales': grand_total_sales,
+        'date_range': date_range
     }
     # return HttpResponse('')
     return render(request, 'posApp/sales.html', context)
@@ -355,7 +391,7 @@ def receipt(request):
 
 
 @login_required
-@user_passes_test(if_admin, redirect_field_name='home-page')
+@user_passes_test(is_admin, redirect_field_name='home-page')
 def delete_sale(request):
     resp = {'status': 'failed', 'msg': ''}
     id = request.POST.get('id')
