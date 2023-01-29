@@ -62,6 +62,7 @@ class Sales(models.Model):
     tendered_amount = models.FloatField(default=0)
     amount_change = models.FloatField(default=0)
     date_added = models.DateTimeField(default=timezone.now)
+    date_created = models.DateField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):

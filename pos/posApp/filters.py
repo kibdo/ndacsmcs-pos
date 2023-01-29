@@ -3,8 +3,8 @@ import django_filters
 
 
 class SalesFilter(django_filters.FilterSet):
-    date_added = django_filters.DateFromToRangeFilter()
+    date_created = django_filters.DateFilter()
 
     class Meta:
         model = Sales
-        fields = ['date_added', 'code', 'grand_total']
+        fields = ['date_created']

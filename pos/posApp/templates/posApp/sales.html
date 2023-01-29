@@ -12,24 +12,14 @@
             <form action="" method="GET">
                 <table class="text-sm w-auto">
                     <thead>
-                        <th class="pr-2 font-weight-light">
-                            From
-                        </th>
-                        <th class="px-2 font-weight-light">
-                            To
-                        </th>
                         <th class="px-2 font-weight-light font-bold">
                             
                         </th>
                     </thead>
                     <tbody>
-                        
                         <tr>
                             <td class="pr-2 font-weight-light">
-                                <input type="date" name="date_added_after" id="" value="{{ date_range.start|date:'Y-m-d' }}"/>
-                            </td>
-                            <td class="px-2 font-weight-light">
-                                <input type="date" name="date_added_before" id="" value="{{ date_range.end|date:'Y-m-d' }}"/>
+                                <input class="bg-gray-300 p-2 rounded-2" type="date" name="date_created" id="" value="{{ date_range.end }}"/>
                             </td>
                             <td class="px-2 font-bold text-xl">
                                 <input class="transition-all duration-200 ease-in text-sm bg-blue-800 text-gray-100 px-3 py-1 rounded-1 hover:bg-blue-600" type="submit" value="filter" />
@@ -37,11 +27,18 @@
                         </tr>
                     </tbody>
                 </table>
+            </form>
+            <form action="" method="get">
+                <input class="transition-all duration-200 ease-in text-sm bg-red-600 text-gray-100 px-3 py-1 rounded-1 hover:bg-red-400" type="submit" value="Clear Filter" />
             </form>            
         </div>
         <div class="mdc-card py-2 d-flex items-start font-bold">
-            Total Sales Within Time Period
-            <span class="text-4xl text-blue-800">{{ grand_total_sales }}</span>
+            {% if date_range.end == None %}
+                All time Sales
+            {% else %}
+                Total sales for {{ date_range.end }} 
+            {% endif %}
+            <span class="text-4xl text-blue-800">{{ grand_total_sales }} NGN</span>
         </div>
 </div>
 <div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-12">

@@ -344,22 +344,14 @@ def salesList(request):
             data['tax_amount'] = format(int(data['tax_amount']), '.2f')
     sale_data = SalesFilter(request.GET, queryset=sales)
     for completed_sale in sale_data.qs:
-        print(completed_sale.date_added)
         grand_total_sales += completed_sale.grand_total
-    try:
-
-        date_range['start'] = sale_data.qs[0].date_added
-        date_range['end'] = sale_data.qs[::-1][0].date_added
-
-    except:
-        pass
     # Paginator
-    sale_data = Paginator(sale_data.qs, 3)
+    sale_data = Paginator(sale_data.qs, 50)
     page_number = request.GET.get('page')
     sale_data = sale_data.get_page(page_number)
     # Filter
-    # print(sale_data[0].date_added)
-
+    print(request.GET.get('date_created'))
+    date_range['end'] = request.GET.get('date_created')
     context = {
         'page_title': 'Sales Transactions',
         'sale_data': sale_data,
