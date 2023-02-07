@@ -66,38 +66,44 @@ def save_user(request):
     else:
         try:
             if (data['id']).isnumeric() and int(data['id']) > 0:
-                is_salesman = get_user_model().objects.filter(
-                    id=data['id']).first().is_salesman
-                is_staff = get_user_model().objects.filter(
-                    id=data['id']).first().is_staff
+                is_staff = None
+                is_salesman = None
                 user_accnt = get_user_model().objects.filter(
                     id=data['id']).first()
                 admin = get_user_model().objects.filter(
                     username='admin').first()
                 if 'isAdmin' in data.keys():
                     is_staff = True
+                    is_salesman = True
                 else:
                     is_staff = False
                 if 'isSalesman' in data.keys():
                     is_salesman = True
                 else:
                     is_salesman = False
-                if user_accnt.username == admin.username:
-                    is_staff = True
-                    is_salesman = True
                 save_user = get_user_model().objects.filter(id=data['id']).update(
                     first_name=data['firstname'], last_name=data['lastname'], is_salesman=is_salesman, is_staff=is_staff)
                 if len(data['password']) > 0:
-                    print('Password set')
                     user_object = get_user_model(
                     ).objects.filter(id=data['id']).first()
                     user_object.set_password(data['password'])
                     user_object.save()
             else:
                 user_model = get_user_model()
-                save_user = user_model(username=data['username'],
+                is_staff = False
+                is_salesman = False
+                try:
+                    if 'isAdmin' in data.keys():
+                        is_staff = True
+                        is_salesman = True
+                    if 'isSalesman' in data.kays():
+                        is_salesman = True
+                except:
+                    pass
+                save_user = user_model(is_staff=is_staff, is_salesman=is_salesman, username=data['username'],
                                        first_name=data['firstname'], last_name=data['lastname'])
                 save_user.set_password(data['password'])
+
                 print('Trial Else')
                 save_user.save()
 

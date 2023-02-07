@@ -17,7 +17,7 @@
         <div class="form-group mb-3">
             <div class="form-group mb-3">
                 <label for="password" class="control-label">{% if user.pk %}Change{% endif %} Password {% if user.pk %}<small><i style="color: rgb(216, 87, 87);">(Leave blank to retain current password)</i></small>{% endif %}</label>
-                <input type="password" name="password" id="password" class="form-control form-control-sm rounded-0" value="">
+                <input type="password" name="password" id="password" class="form-control form-control-sm rounded-0" value="" {% if not user.pk %} required {% endif %}>
             </div>
         </div>
        {% if user.id != request.user.id %} 
@@ -38,6 +38,10 @@
               </label>
             </div>            
         </div>
+        {% else %}
+        <input type="checkbox" class="form-check-input invisible" name="isSalesman" id="is-salesman" value="checkedValue" {% if user.is_salesman or user.is_staff %} checked {% endif %}>
+        <input type="checkbox" class="form-check-input invisible" name="isAdmin" id="is-admin" value="checkedValue" {% if user.is_staff %} checked {% endif %}>
+
         {% endif %}
     </form>
     </div>
