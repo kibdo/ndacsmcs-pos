@@ -90,14 +90,18 @@ def save_user(request):
                     user_object.save()
             else:
                 user_model = get_user_model()
-                is_staff = False
-                is_salesman = False
+                is_staff = None
+                is_salesman = None
                 try:
                     if 'isAdmin' in data.keys():
                         is_staff = True
                         is_salesman = True
-                    if 'isSalesman' in data.kays():
+                    else:
+                        is_staff = False
+                    if 'isSalesman' in data.keys():
                         is_salesman = True
+                    else:
+                        is_salesman = False
                 except:
                     pass
                 save_user = user_model(is_staff=is_staff, is_salesman=is_salesman, username=data['username'],

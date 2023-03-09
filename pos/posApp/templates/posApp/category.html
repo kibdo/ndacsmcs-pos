@@ -39,9 +39,9 @@
                 <tbody>
                     {% for cat in category %}
                     <tr>
-                        <td class="px-2 py-1 text-center">{{ cat.id }}</td>
+                        <td class="px-2 py-1 text-center">{{ forloop.counter }}</td>
                         <td class="px-2 py-1 text-start">{{ cat.name }}</td>
-                        <td class="px-2 py-1 text-start">{{ cat.description }}</td>
+                        <td style="overflow: hidden; max-width: 9rem; text-overflow: ellipsis" class="px-2 py-1 text-start">{{ cat.description }}</td>
                         <td class="px-2 py-1 text-center">
                             {% if cat.status == 1 %}
                             <span class="badge bg-primary rounded-pill px-3">In stock</span> {% else %}

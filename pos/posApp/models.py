@@ -54,6 +54,9 @@ class Products(models.Model):
 
 
 class Sales(models.Model):
+    is_credit = models.BooleanField(default=False)
+    client_name = models.CharField(max_length=200, default=None)
+    cooperative_number = models.CharField(max_length=100, default=None)
     code = models.CharField(max_length=100)
     sub_total = models.FloatField(default=0)
     grand_total = models.FloatField(default=0)
@@ -64,6 +67,8 @@ class Sales(models.Model):
     date_added = models.DateTimeField(default=timezone.now)
     date_created = models.DateField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
+    interest_rate = models.IntegerField(default=0)
+    interest = models.IntegerField(default=0)
 
     def __str__(self):
         return self.code
@@ -75,3 +80,7 @@ class salesItems(models.Model):
     price = models.FloatField(default=0)
     qty = models.FloatField(default=0)
     total = models.FloatField(default=0)
+
+
+class Settings(models.Model):
+    interest_rate = models.IntegerField(default=9)

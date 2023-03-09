@@ -1,8 +1,10 @@
+import csv
+from django.utils.encoding import smart_str
 from pickle import FALSE
 from django.shortcuts import redirect, render
 from django.http import HttpResponse
 from flask import jsonify
-from .models import Category, Products, Sales, salesItems
+from .models import Category, Products, Sales, salesItems, Settings
 from django.db.models import Count, Sum
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
@@ -13,7 +15,6 @@ import sys
 from datetime import date, datetime
 from django.core.paginator import Paginator
 from .filters import SalesFilter
-
 # if admin user
 
 
@@ -65,6 +66,9 @@ def logoutuser(request):
 
 @login_required
 def home(request):
+    settings = Settings.objects.all()
+    if len(settings) <= 0:
+        Settings(interest_rate=9).save()
     now = datetime.now()
     current_year = now.strftime("%Y")
     current_month = now.strftime("%m")
@@ -217,7 +221,7 @@ def save_product(request):
     else:
         check = Products.objects.filter(code=data['code']).all()
     if len(check) > 0:
-        resp['msg'] = "Product Code Already Exists in the database"
+        resp['msg'] = "Product Brand Already Exists in the database"
     else:
         category = Category.objects.filter(id=data['category_id']).first()
         try:
@@ -270,11 +274,12 @@ def pos(request):
 @user_passes_test(is_salesman_or_is_admin, redirect_field_name='home-page')
 def checkout_modal(request):
     grand_total = 0
+    interest_rate = Settings.objects.all().last().interest_rate
     if 'grand_total' in request.GET:
         grand_total = request.GET['grand_total']
     context = {
         'grand_total': grand_total,
-    }
+        'interest_rate': interest_rate}
     return render(request, 'posApp/checkout.html', context)
 
 
@@ -294,8 +299,24 @@ def save_pos(request):
     code = str(pref) + str(code)
 
     try:
-        sales = Sales(code=code, sub_total=data['sub_total'], tax=data['tax'], tax_amount=data['tax_amount'],
-                      grand_total=data['grand_total'], tendered_amount=data['tendered_amount'], amount_change=data['amount_change']).save()
+        client_name_length = len(data['client_name'])
+        coorp_number_length = len(data['coorp_number'])
+
+        if client_name_length > 0 and coorp_number_length > 0:
+            tendered_amount = int(data['grand_total'])
+            interest_rate = Settings.objects.last().interest_rate
+            interest = (interest_rate/100) * int(data['sub_total'])
+            interest = round(interest)
+            grand_total = interest + int(data['grand_total'])
+            grand_total = round(grand_total)
+            tendered_amount = grand_total
+
+            sales = Sales(interest_rate=interest_rate, interest=interest, is_credit=True, cooperative_number=data['coorp_number'], client_name=data['client_name'], code=code, sub_total=data['sub_total'], tax=0, tax_amount=0,
+                          grand_total=grand_total, tendered_amount=tendered_amount, amount_change=data['amount_change']).save()
+        else:
+            print('hello')
+            sales = Sales(interest_rate=0, interest=0, is_credit=False, cooperative_number=data['coorp_number'], client_name=data['client_name'], code=code, sub_total=data['sub_total'], tax=0, tax_amount=0,
+                          grand_total=data['grand_total'], tendered_amount=data['tendered_amount'], amount_change=data['amount_change']).save()
         sale_id = Sales.objects.last().pk
         i = 0
         for prod in data.getlist('product_id[]'):
@@ -305,14 +326,14 @@ def save_pos(request):
             qty = data.getlist('qty[]')[i]
             price = data.getlist('price[]')[i]
             print(product.units)
-            total = int(qty) * int(price)
+            total = float(qty) * int(price)
             print({'sale_id': sale, 'product_id': product,
                   'qty': qty, 'price': price, 'total': total})
             salesItems(sale_id=sale, product_id=product,
                        qty=qty, price=price, total=total).save()
             i += int(1)
             # No. of units remaining
-            units_remaining = int(product.units) - int(qty)
+            units_remaining = int(product.units) - float(qty)
             Products.objects.filter(id=product_id).update(
                 units=units_remaining)
         resp['status'] = 'success'
@@ -326,7 +347,11 @@ def save_pos(request):
 
 @login_required
 def salesList(request):
-    sales = Sales.objects.all()
+    enumeration = []
+    sales = Sales.objects.all().order_by('pk').reverse()
+    for sale in sales:
+        print(sale.id)
+    sale_items = salesItems.objects.all()
     sale_data = []
     grand_total_sales = 0
     date_range = {
@@ -343,20 +368,29 @@ def salesList(request):
         if 'tax_amount' in data:
             data['tax_amount'] = format(int(data['tax_amount']), '.2f')
     sale_data = SalesFilter(request.GET, queryset=sales)
+    total = 0
     for completed_sale in sale_data.qs:
+        total += 1
         grand_total_sales += completed_sale.grand_total
+    print(total)
+    # Assigning S/N
+    for sale_sn, sale_obj in enumerate(sale_data.qs, 1):
+        enumeration.append([sale_sn, sale_obj.code])
     # Paginator
-    sale_data = Paginator(sale_data.qs, 50)
+    sale_data = Paginator(sale_data.qs, 30000)
     page_number = request.GET.get('page')
     sale_data = sale_data.get_page(page_number)
+
     # Filter
-    print(request.GET.get('date_created'))
-    date_range['end'] = request.GET.get('date_created')
+    date_range['end'] = request.GET.get('date_after')
+    date_range['start'] = request.GET.get('date_before')
     context = {
         'page_title': 'Sales Transactions',
         'sale_data': sale_data,
         'grand_total_sales': grand_total_sales,
-        'date_range': date_range
+        'date_range': date_range,
+        'sale_items': sale_items,
+        'enumeration': enumeration
     }
     # return HttpResponse('')
     return render(request, 'posApp/sales.html', context)
@@ -395,3 +429,68 @@ def delete_sale(request):
         resp['msg'] = "An error occured"
         print("Unexpected error:", sys.exc_info()[0])
     return HttpResponse(json.dumps(resp), content_type='application/json')
+
+
+@login_required
+@user_passes_test(is_admin, redirect_field_name='home-page')
+def settings(request):
+    settings = Settings.objects.all()
+    if len(settings) <= 0:
+        Settings(interest_rate=9).save()
+    int_rate = Settings.objects.last().interest_rate
+    if request.method == 'POST':
+        data = request.POST
+        interest_rate = data.get('interest_rate')
+        print(interest_rate)
+        save_settings = Settings.objects.all().last()
+        save_settings.interest_rate = int(interest_rate)
+        save_settings.save()
+        int_rate = Settings.objects.last().interest_rate
+        messages.success(request, 'Settings Updated Successfully')
+    context = {
+        'interest_rate': int_rate
+    }
+    return render(request, 'posApp/settings.html', context=context)
+
+
+@login_required
+def download_sales(request):
+    sales = Sales.objects.all().order_by('pk').reverse()
+    sale_data = SalesFilter(request.GET, queryset=sales)
+
+    response = HttpResponse(content_type='text/csv')
+
+    response['Content-Disposition'] = 'attachment; filename="sales.csv"'
+    writer = csv.writer(response, csv.excel)
+    response.write(u'\ufeff'.encode('utf8'))
+
+    writer.writerow([
+        smart_str(u"S/N"),
+        smart_str(u"DateTime"),
+        smart_str(u"Transaction code"),
+        smart_str(u"Customer's Name"),
+        smart_str(u"Cooperative Number"),
+        smart_str(u"Items"),
+        smart_str(u"Sub Total"),
+        smart_str(u"Interest"),
+        smart_str(u"Total")
+    ])
+    serial_number = 0
+    for sale in sale_data.qs:
+        serial_number += 1
+        items = ''
+        for item in salesItems.objects.all():
+            if item.sale_id.code == sale.code:
+                items += f'{item.product_id.name}, '
+        writer.writerow([
+            smart_str(serial_number),
+            smart_str(sale.date_created),
+            smart_str(sale.code),
+            smart_str(sale.client_name),
+            smart_str(sale.cooperative_number),
+            smart_str(items[:-2]),
+            smart_str(sale.sub_total),
+            smart_str(sale.interest),
+            smart_str(sale.grand_total)
+        ])
+    return response

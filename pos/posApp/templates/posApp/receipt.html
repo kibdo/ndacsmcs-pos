@@ -17,6 +17,13 @@
         <hr>
         <div class="lh-1">
             <div>
+                <div class="py-2">
+                    {% if transaction.is_credit == True %}
+                        <span>Member's Name:</span> <span style="text-transform: capitalize;" class="text-lg font-bold">{{ transaction.client_name }}</span>  <br>
+                        <span>Coorperative Number:</span> <span class="text- font-bold">{{ transaction.cooperative_number }}</span>  <br>
+                    {% endif %}
+                </div>
+                <hr>
                 <span>Data:</span> {{ transaction.date_added|date:"M d Y" }} <br>
                 <span>Transaction Code:</span> {{ transaction.code }}
             </div>
@@ -30,7 +37,7 @@
             </div>
             {% for item in salesItems %}
             <div class="d-flex w-100 align-items-end">
-                <div class="col-2 text-center fw-bold">{{ item.qty|intcomma|floatformat:0 }}</div>
+                <div class="col-2 text-center fw-bold">{{ item.qty|floatformat:1 }}</div>
                 <div class="col-6 fw-bold">
                     <div class="lh-1">
                         <small>{{ item.product_id }}</small><br>
@@ -41,22 +48,38 @@
             </div>
             {% endfor %}
             <hr>
+            {% if transaction.is_credit == True %}
+                <div class="d-flex w-100 align-items-end">
+                    <div class="col-6 text-start fw-bold">Sub Total</div>
+                    <div class="col-6 text-end fw-bold">{{ transaction.sub_total|intcomma }}</div>
+                </div>
+                <div class="d-flex w-100 align-items-end">
+                    <div class="col-6 text-start fw-bold">Interest Rate</div>
+                    <div class="col-6 text-end fw-bold">{{ transaction.interest_rate }}%</div>
+                </div>
+                <div class="d-flex w-100 align-items-end">
+                    <div class="col-6 text-start fw-bold">Interest Amount</div>
+                    <div class="col-6 text-end fw-bold">{{ transaction.interest|intcomma }}</div>
+                </div>
+            {% endif %}
             <div class="d-flex w-100 align-items-end">
                 <div class="col-6 text-start fw-bold">Total</div>
                 <div class="col-6 text-end fw-bold">{{ transaction.grand_total|intcomma }}</div>
             </div>
-            <div class="d-flex w-100 align-items-end">
+            <div class="d-flex w-100 align-items-end d-none">
                 <div class="col-6 text-start fw-bold">Tax <small>(inclusive)</small>: {{ transaction.tax|intcomma }}%</div>
                 <div class="col-6 text-end fw-bold">{{ transaction.tax_amount|intcomma|floatformat:2 }}</div>
             </div>
             <div class="d-flex w-100 align-items-end">
                 <div class="col-6 text-start fw-bold">Tenedered</div>
-                <div class="col-6 text-end fw-bold">{{ transaction.tendered_amount|intcomma }}</div>
+                <div class="col-6 text-end fw-bold">{% if transaction.is_credit %}-{% endif %}{{ transaction.tendered_amount|intcomma }}</div>
             </div>
+            {% if transaction.is_credit != True %}
             <div class="d-flex w-100 align-items-end">
                 <div class="col-6 text-start fw-bold">Change</div>
                 <div class="col-6 text-end fw-bold">{{ transaction.amount_change|intcomma }}</div>
             </div>
+            {% endif %}
         </div>
     </div>
     <hr>

@@ -1,9 +1,10 @@
 {% load static %}
 <!-- partial:partials/_sidebar.html -->
 <aside class="mdc-drawer mdc-drawer--dismissible mdc-drawer--open bg-dark bg-gradient">
-    <div class="mdc-drawer__header border-bottom border-light">
+    <div class="mdc-drawer__header border-bottom border-light d-flex justify-center items-center">
+        <img style="height: 2rem; width: 2rem" class="" src="{% static 'posApp/assets/img/logo.png' %}" alt="">
         <a href="{% url 'home-page' %}" class="brand-logo">
-            <h3 class="text-center text-light">NDACSMCS POS</h3>
+            <h3 class="text-center text-light">NDACSMCS</h3>
         </a>
     </div>
     <div class="mdc-drawer__content">
@@ -39,7 +40,12 @@
                 {% if request.user.is_staff %}
                 <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-drawer-link" href="{% url 'list-users' %}">
-                        <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true">l</i> Users
+                        <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true">group</i> Users
+                    </a>
+                </div>
+                <div class="mdc-list-item mdc-drawer-item">
+                    <a class="mdc-drawer-link" href="{% url 'settings' %}">
+                        <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true">settings</i> Settings
                     </a>
                 </div>
                 {% endif %}

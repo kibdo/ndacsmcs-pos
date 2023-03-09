@@ -25,8 +25,7 @@ SECRET_KEY = 'django-insecure--w(dug*va_megpa25w$gmv8o6+f8!fg_*m1^u$)z25pab0hicm
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['abuakar21.pythonanywhere.com', '127.0.0.1', 'localhost']
-
+ALLOWED_HOSTS = ["*"]
 
 # Application definition
 
@@ -78,8 +77,12 @@ WSGI_APPLICATION = 'pos.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'pointOfSale',
+        'USER': 'pos',
+        'PASSWORD': 'pos',
+        'HOST': '127.0.0.1',
+        'PORT': '5050'
     }
 }
 
@@ -122,10 +125,12 @@ USE_TZ = True
 
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATIC_URL = '/static/'
+
 STATICFILES_DIRS = (
     # location of your application, should not be public web accessible
     './static',
 )
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
@@ -135,3 +140,6 @@ LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/login'
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
+
+CSRF_TRUSTED_ORIGINS = ['http://localhost',
+                        'http://127.0.0.1', 'http://192.168.43.72']
