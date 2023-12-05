@@ -1,0 +1,97 @@
+<div class="container-fluid">
+    <form action="" id="user-form">
+        <input type="hidden" name="id" value="{% if user.pk %}{{user.pk}}{% endif %}">
+        <div class="form-group mb-3">
+            <label for="username" class="control-label">Username</label>
+            
+            <input type="text" name="username" id="username" class="form-control form-control-sm rounded-0" value="{% if user.username %}{{user.username}}{% endif %}" required>
+        </div>
+        <div class="form-group mb-3">
+            <label for="firstname" class="control-label">First Name</label>
+            <input type="text" name="firstname" id="firstname" class="form-control form-control-sm rounded-0" value="{% if user.first_name %}{{user.first_name}}{% endif %}" required>
+        </div>
+        <div class="form-group mb-3">
+            <label for="lastname" class="control-label">Last Name</label>
+            <input type="text" name="lastname" id="lastname" class="form-control form-control-sm rounded-0" value="{% if user.last_name %}{{user.last_name}}{% endif %}">
+        </div>
+        <div class="form-group mb-3">
+            <div class="form-group mb-3">
+                <label for="password" class="control-label">{% if user.pk %}Change{% endif %} Password {% if user.pk %}<small><i style="color: rgb(216, 87, 87);">(Leave blank to retain current password)</i></small>{% endif %}</label>
+                <input type="password" name="password" id="password" class="form-control form-control-sm rounded-0" value="" {% if not user.pk %} required {% endif %}>
+            </div>
+        </div>
+       {% if user.id != request.user.id %} 
+        <h5>Set User Permission</h5>
+        <div class="form-group mb-3">
+            <div class="form-check">
+              <label class="form-check-label">
+                <input type="checkbox" class="form-check-input" name="isSalesman" id="is-salesman" value="checkedValue" {% if user.is_salesman or user.is_staff %} checked {% endif %}>
+                Can make sales
+              </label>
+            </div>            
+        </div>       
+        <div class="form-group mb-3">
+            <div class="form-check">
+              <label class="form-check-label">
+                <input type="checkbox" class="form-check-input" name="isAdmin" id="is-admin" value="checkedValue" {% if user.is_staff %} checked {% endif %}>
+                Can manage products and users <br /><small style="color: rgb(216, 87, 87);">(WARNING: If checked, this user can also edit/delete products and users!)</small>
+              </label>
+            </div>            
+        </div>
+        {% else %}
+        <input type="checkbox" class="form-check-input invisible" name="isSalesman" id="is-salesman" value="checkedValue" {% if user.is_salesman or user.is_staff %} checked {% endif %}>
+        <input type="checkbox" class="form-check-input invisible" name="isAdmin" id="is-admin" value="checkedValue" {% if user.is_staff %} checked {% endif %}>
+
+        {% endif %}
+    </form>
+    </div>
+    <script>
+        $(function() {
+            $('#user-form').submit(function(e) {
+                e.preventDefault();
+                var _this = $(this)
+                $('.err-msg').remove();
+                var el = $('<div>')
+                el.addClass("alert alert-danger err-msg")
+                el.hide()
+                if (_this[0].checkValidity() == false) {
+                    _this[0].reportValidity();
+                    return false;
+                }
+                start_loader();
+                $.ajax({
+                    headers: {
+                        "X-CSRFToken": '{{csrf_token}}'
+                    },
+                    url: "{% url 'save-user-page' %}",
+                    data: new FormData($(this)[0]),
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    method: 'POST',
+                    type: 'POST',
+                    dataType: 'json',
+                    error: err => {
+                        console.log(err)
+                        end_loader();
+                    },
+                    success: function(resp) {
+                        if (typeof resp == 'object' && resp.status == 'success') {
+                            el.removeClass("alert alert-danger err-msg")
+                            location.reload()
+                        } else if (resp.status == 'failed' && !!resp.msg) {
+                            el.text(resp.msg)
+                        } else {
+                            el.text("An error occured", 'error');
+                            end_loader();
+                            console.err(resp)
+                        }
+                        _this.prepend(el)
+                        el.show('slow')
+                        $("html, body, .modal").scrollTop(0);
+                        end_loader()
+                    }
+                })
+            })
+        })
+    </script>

@@ -1,0 +1,115 @@
+{% load humanize %}
+<style>
+    #uni_modal .modal-footer {
+        display: none
+    }
+</style>
+<div class="container-fluid">
+    <div id="outprint">
+        <div class="lh-1 mb-2">
+            <center><span class="">RECEIPT</span></center>
+        </div>
+        <div class="lh-1">
+            <center><bold class="fw-bold" style="font-size: 1.5rem;">SUPERMARKET</bold></center>
+            <center><small class="fw-bold" style="text-transform: uppercase;">NDA Civilian Staff Multipurpose Coorperative Society LTD</small></center>
+            <center><small class="fw-bold">NDA Mammy Market, Ribadu Cantonment</small></center>
+        </div>
+        <hr>
+        <div class="lh-1">
+            <div>
+                <div class="py-2">
+                    {% if transaction.is_credit == True %}
+                        <span>Member's Name:</span> <span style="text-transform: capitalize;" class="text-lg font-bold">{{ transaction.client_name }}</span>  <br>
+                        <span>Coorperative Number:</span> <span class="text- font-bold">{{ transaction.cooperative_number }}</span>  <br>
+                    {% endif %}
+                </div>
+                <hr>
+                <span>Date:</span> {{ transaction.date_added|date:"d M, Y" }} <br>
+                <span>Transaction Code:</span> {{ transaction.code }}
+            </div>
+        </div>
+        <div class="clear-fix py-3"></div>
+        <div class="lh-1">
+            <div class="d-flex w-100 align-items-end border-bottom">
+                <div class="col-2 text-center fw-bold">Qty</div>
+                <div class="col-6 text-center fw-bold">Product</div>
+                <div class="col-4 text-center fw-bold">Amount</div>
+            </div>
+            {% for item in salesItems %}
+            <div class="d-flex w-100 align-items-end">
+                <div class="col-2 text-center fw-bold">{{ item.qty|floatformat:1 }}</div>
+                <div class="col-6 fw-bold">
+                    <div class="lh-1">
+                        <small>{{ item.product_id }}</small><br>
+                        <small>&#x20A6;{{ item.price|intcomma }}</small><br>
+                    </div>
+                </div>
+                <div class="col-4 text-end fw-bold">&#x20A6;{{ item.total|intcomma }}</div>
+            </div>
+            {% endfor %}
+            <hr>
+            {% if transaction.is_credit == True %}
+                <div class="d-flex w-100 align-items-end">
+                    <div class="col-6 text-start fw-bold">Sub Total</div>
+                    <div class="col-6 text-end fw-bold">&#x20A6;{{ transaction.sub_total|intcomma }}</div>
+                </div>
+                <div class="d-flex w-100 align-items-end">
+                    <div class="col-6 text-start fw-bold">Interest Rate</div>
+                    <div class="col-6 text-end fw-bold">{{ transaction.interest_rate }}%</div>
+                </div>
+                <div class="d-flex w-100 align-items-end">
+                    <div class="col-6 text-start fw-bold">Interest Amount</div>
+                    <div class="col-6 text-end fw-bold">&#x20A6;{{ transaction.interest|intcomma }}</div>
+                </div>
+            {% endif %}
+            <div class="d-flex w-100 align-items-end">
+                <div class="col-6 text-start fw-bold">Total</div>
+                <div class="col-6 text-end fw-bold">&#x20A6;{{ transaction.grand_total|intcomma }}</div>
+            </div>
+            <div class="d-flex w-100 align-items-end d-none">
+                <div class="col-6 text-start fw-bold">Tax <small>(inclusive)</small>: {{ transaction.tax|intcomma }}%</div>
+                <div class="col-6 text-end fw-bold">&#x20A6;{{ transaction.tax_amount|intcomma|floatformat:2 }}</div>
+            </div>
+            <div class="d-flex w-100 align-items-end">
+                <div class="col-6 text-start fw-bold">Tenedered</div>
+                <div class="col-6 text-end fw-bold">&#x20A6;{% if transaction.is_credit %}-{% endif %}{{ transaction.tendered_amount|intcomma }}</div>
+            </div>
+            {% if transaction.is_credit != True %}
+            <div class="d-flex w-100 align-items-end">
+                <div class="col-6 text-start fw-bold">Change</div>
+                <div class="col-6 text-end fw-bold">&#x20A6;{{ transaction.amount_change|intcomma }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <hr>
+    <div class="clear-fix py-3"></div>
+    <div class="d-flex w-100 justify-content-end">
+        <button class="btn btn-light bg-gradient border rounded-0 btn-sm me-1" type="button" id="receipt_print"><i class="mdi mdi-printer"></i> Print</button>
+        <button class="btn btn-secondary bg-gradient border rounded-0 btn-sm" type="button" data-bs-dismiss="modal"><i class="mdi mdi-close"></i> Close</button>
+    </div>
+</div>
+<script>
+    $(function() {
+        $('#receipt_print').click(function() {
+            var head = $('head').clone()
+            var p = $('#outprint').clone()
+            var el = $("<div>")
+            head.append('<style>body{background-color:unset !important}</style>')
+            el.append(head)
+            el.find('title').text("Receipt - Print View")
+            el.append(p)
+            start_loader()
+            var nw = window.open('', '_blank', "width=800,height=800,left=300, top = 200")
+            nw.document.write(el.html())
+            nw.document.close()
+            setTimeout(() => {
+                nw.print()
+                setTimeout(() => {
+                    nw.close()
+                    end_loader()
+                }, 250)
+            }, 300)
+        })
+    })
+</script>

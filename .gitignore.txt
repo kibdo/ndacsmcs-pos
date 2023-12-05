@@ -1,0 +1,10 @@
+# Directories
+nginx_waitress/
+__pycache__/
+migrations/
+
+
+# Files
+db.sqlite3.sqlite3
+runserver.py
+settings.py

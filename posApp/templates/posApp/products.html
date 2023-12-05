@@ -1,0 +1,146 @@
+
+{% extends "posApp/base.html" %} {% block pageContent %}
+{% load humanize %}
+<div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-12">
+    <div class="mdc-card py-2">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="card-title mb-0">Product List</h4>
+            {% if request.user.is_staff %}
+                <div class="text-start">
+                    <button class="btn btn-primary bg-gradient btn-sm rounded-0" id="create_new"><i class="mdi mdi-plus"></i><span> Add New</span></button>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-12">
+    <div class="mdc-card py-2 d-flex items-start font-bold">
+        Search
+        <input type="text" class="form-control" id="search-box" placeholder="Search"/>
+    </div>
+    <div class="mdc-card py-2 d-flex items-start font-bold">
+            Total Amount in stock
+        <span class="text-4xl text-blue-800">&#x20A6;{{ total_stock_price_worth|intcomma }}</span>
+    </div>    
+</div>
+<div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-12">
+    <div class="mdc-card">
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <colgroup>
+                    <col width="5%">
+                    <col width="10%">
+                    <col width="10%">
+                    <col width="15%">
+                    <col width="10%">
+                    <col width="10%">
+                    <col width="10%">
+                    <col width="15%">
+                    {% if request.user.is_staff %}
+                        <col width="15%">
+                    {% endif %}
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th class="text-center py-1">#</th>
+                        <th class="text-center py-1">Category</th>
+                        <th class="text-center py-1">Product</th>
+                        <th class="text-center py-1">Price</th>
+                        <th class="text-center py-1">Description</th>
+                        <th class="text-center py-1">Stock Available</th>
+                        <th class="text-center py-1">Total Stock Price</th>
+                        <th class="text-center py-1">Status</th>
+                        {% if request.user.is_staff %}
+                            <th class="text-center py-1">Action</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr class="{% if product.units < 15 and product.units > 0 %} bg-yellow-400 {% elif product.units < 1 %} bg-red-400 {% endif %}">
+                        <td class="px-2 py-1 text-center">{{ forloop.counter }}</td>
+                        <td class="px-2 py-1 text-start">{{ product.category_id }}</td>
+                        <td class="px-2 py-1 text-start product-name"><span style="text-transform: capitalize;">{{ product.code }}</span> - <span style="text-transform: capitalize;">{{ product.name }}</span></td>
+                        <td class="px-2 py-1 text-start">&#x20A6;{{ product.price|intcomma }}</td>
+                        <td style="overflow: hidden; max-width: 12rem; text-overflow: ellipsis" class="px-2 py-1 text-start">{{ product.description }}</td>                        
+                        <td class="px-2 py-1 text-start">{{ product.units }}</td>
+                        <td class="px-2 py-1 text-start">&#x20A6;{{ product.total_stock_price|intcomma }}</td>
+                        <td class="px-2 py-1 text-center">
+                            {% if product.status == 1 %}
+                            <span class="badge bg-primary rounded-pill px-3">In stock</span> {% else %}
+                            <span class="badge bg-secondary rounded-pill px-3">Out of stock</span> {% endif %}
+                        </td>
+                        {% if request.user.is_staff %}
+                            <td class="px-2 py-1 text-center">
+                                <button class="mdc-button mdc-button--raised p-1 icon-button filled-button--light mdc-ripple-upgraded edit-data" type="button" data-id="{{ product.pk }}" title="Edit">
+                                    <i class="material-icons mdc-button__icon">edit</i>
+                                </button>
+                                <button class="mdc-button mdc-button--raised p-1 icon-button filled-button--danger mdc-ripple-upgraded delete-data" type="button" data-id="{{ product.pk }}" title="Delete">
+                                    <i class="material-icons mdc-button__icon">deleteoutline</i>
+                                </button>
+                            </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock pageContent %} {% block ScriptBlock %}
+<script>
+    $(function() {
+        $('#create_new').click(function() {
+            uni_modal("Add New Product", "{% url 'manage_products-page' %}")
+        })
+        $('.edit-data').click(function() {
+            uni_modal("Edit Product", "{% url 'manage_products-page' %}?id=" + $(this).attr('data-id'))
+        })
+        $('.delete-data').click(function() {
+            _conf("Are you sure to delete this Product?", "delete_product", [$(this).attr('data-id')])
+        })
+
+        $('#uni_modal').on('shown.bs.modal', function() {
+            $('#category_id').select2({
+                placeholder: "Please Select Category Here",
+                width: '100%',
+                dropdownParent: $('#uni_modal')
+            })
+        })
+        $("#search-box").on("keyup", function(){
+            let value=$(this).val().toLowerCase();
+            $("table tbody tr").filter(function(){
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            })
+        })
+    })
+
+    function delete_product($id) {
+        start_loader();
+        $.ajax({
+            headers: {
+                "X-CSRFToken": '{{csrf_token}}'
+            },
+            url: "{% url 'delete-product' %}",
+            method: "POST",
+            data: {
+                id: $id
+            },
+            dataType: "json",
+            error: err => {
+                console.log(err)
+                alert_toast("An error occured.", 'error');
+                end_loader();
+            },
+            success: function(resp) {
+                if (typeof resp == 'object' && resp.status == 'success') {
+                    location.reload();
+                } else {
+                    alert_toast("An error occured.", 'error');
+                    end_loader();
+                }
+            }
+        })
+    }
+</script>
+{% endblock ScriptBlock %}

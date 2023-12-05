@@ -1,0 +1,103 @@
+{% load humanize %}
+<div class="container-fluid">
+    <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="pills-home-tab" data-active="true" data-bs-toggle="pill" data-bs-target="#pills-home" type="button" role="tab" aria-controls="pills-home" aria-selected="true">Regular</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="pills-credit-sale-tab" data-active="false" data-bs-toggle="pill" data-bs-target="#pills-profile" type="button" role="tab" aria-controls="pills-profile" aria-selected="false">Credit Sale</button>
+        </li>
+      </ul>
+      <form data-order-type="cash" action="" id="checkout-form">
+        <div class="form-group mb-3">
+            <label for="payable_amount" class="control-label">Payable Amount</label>
+            <input type="text" id="payable_amount" class="form-control form-control-lg rounded-0 text-end" value="{{ grand_total|intcomma }}" required disabled>
+        </div>
+        <div id="interest_rate_wrapper" class="form-group mb-3">
+            <label for="interest_rate" class="control-label">Interest</label>
+            <input type="text" id="interest_rate" class="form-control form-control-lg rounded-0 text-end" value="{{ interest_rate }}%" required disabled>
+        </div>
+        <div id="name-wrapper" class="form-group mb-3">
+            <label for="name" class="control-label">Member's Name</label>
+            <input type="text" id="name" class="form-control form-control-lg rounded-0 text-end" value="" required>
+        </div>
+        <div id="cooperative_number-wrapper" class="form-group mb-3">
+            <label for="cooperative_number" class="control-label">Cooperative Number</label>
+            <input type="text" id="cooperative_number" class="form-control form-control-lg rounded-0 text-end" value="" required>
+        </div>
+        <div id="tendered_amount-wrapper" class="form-group mb-3">
+            <label for="tendered_amount" class="control-label">Amount Tendered</label>
+            <input type="number" step="any" id="tendered_amount" class="form-control form-control-lg rounded-0 text-end" value="0" required>
+        </div>
+        <div id="payment_change-wrapper" class="form-group mb-3">
+            <label for="payment_change" class="control-label">Change</label>
+            <input type="text" id="payment_change" class="form-control form-control-lg rounded-0 text-end" value="{{ 0|intcomma }}" required disabled>
+        </div>
+    </form>
+      <div data-credit-sale="false" class="tab-content" id="pills-tabContent">
+        <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
+            
+        </div>
+        <div class="tab-pane fade" id="pills-profile" role="tabpanel" aria-labelledby="pills-profile-tab">
+        </div>
+      </div>
+</div>
+<script>
+    $(function() {
+        $('#name-wrapper').hide();
+        $('#cooperative_number-wrapper').hide();
+        $('#interest_rate_wrapper').hide();
+        
+        $('#pills-home-tab').on('click', function(){
+            $('#checkout-form').attr('data-order-type','cash')
+            $('#name-wrapper').hide();
+            $('#cooperative_number-wrapper').hide();
+            $('#interest_rate_wrapper').hide();
+            $('#tendered_amount-wrapper').show();
+            $('#payment_change-wrapper').show();
+
+        })
+
+        $('#pills-credit-sale-tab').on('click', function(){
+            $('#checkout-form').attr('data-order-type','credit')
+            $('#name-wrapper').show();
+            $('#cooperative_number-wrapper').show();
+            $('#interest_rate_wrapper').show();
+            $('#tendered_amount-wrapper').hide();
+            $('#payment_change-wrapper').hide();
+        })
+
+        $('#tendered_amount').on('input keypress keyup keydown', function() {
+            var tendered_amount = $('#tendered_amount').val()
+            var payable = $('#payable_amount').val()
+            tendered_amount = tendered_amount.replace(/,/gi, '')
+            payable = payable.replace(/,/gi, '')
+            var change = 0
+            tendered_amount = tendered_amount > 0 ? tendered_amount : 0;
+            $('[name="tendered_amount"]').val(tendered_amount)
+            change = parseFloat(tendered_amount) - parseFloat(payable)
+            console.log(tendered_amount, payable)
+            $('#payment_change').val(parseFloat(change).toLocaleString('en-US'))
+            $('[name="amount_change"]').val(change)
+
+        })
+        $('#checkout-form').submit(function(e) {
+            e.preventDefault();
+            if (($('[name="amount_change"]').val() < 0) && ($('#checkout-form').attr('data-order-type') == 'cash')){
+                alert("Tendered Amount is lower than Payable Amount")
+                return false;
+            };
+            if  (($('[name="tendered_amount"]').val() <= 0) && ($('#checkout-form').attr('data-order-type') == 'cash')){
+                alert("Tendered Amount can't be lower than product price")
+                return false
+            }
+            if  (($('#checkout-form').attr('data-order-type') == 'credit') && ($('#cooperative_number').val().length < 1 || $('#name').val().length < 1)){
+                alert("Please insert Member's Name and Coorperative Number")
+                return false
+            }
+            $('[name="client_name"]').val($('#name').val())
+            $('[name="coorp_number"]').val($('#cooperative_number').val())
+            $('#pos-form').submit()
+        })
+    })
+</script>
